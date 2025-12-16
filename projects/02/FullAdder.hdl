@@ -11,5 +11,14 @@ CHIP FullAdder {
         carry;   // Left bit of a + b + c
 
     PARTS:
-    //// Replace this comment with your code.
+    // Sum the two inputs `a` and `b`
+    HalfAdder(a=a, b=b, sum=initsum, carry=initcarry);
+
+    // Update the sum of the first addition above with the carry bit from the
+    // previous addition
+    HalfAdder(a=c, b=initsum, sum=sum, carry=middlecarry);
+
+    // Updating the initial carry can't produce a carry (I think), so just use
+    // the "sum" part of the half-adder gate, namely, an `Xor` gate
+    Xor(a=initcarry, b=middlecarry, out=carry);
 }
