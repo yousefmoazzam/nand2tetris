@@ -41,5 +41,32 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    //// Replace this comment with your code.
+    // Potentially zero `x` input based on `zx` input
+    And16(a=x, b=false, out=zeroedx);
+    Mux16(a=x, b=zeroedx, sel=zx, out=zxres);
+
+    // Potentially zero `y` input based on `zy` input
+    And16(a=y, b=false, out=zeroedy);
+    Mux16(a=y, b=zeroedy, sel=zy, out=zyres);
+
+    // Compute the sum of the (potentially zeroed) `x` and `y` inputs, in case
+    // it's needed when we later check the value of the `f` input to see what
+    // computation should be put to the `out` pin
+    Add16(a=zxres, b=zyres, out=sumzxreszyres);
+
+    // Perform computation based on the value of `f` input (note that we're not
+    // yet needing to tackle the case of computing the bitwise AND of the two
+    // inputs, so just give the `f` value associated with that option in the
+    // `Mux16` the value of a 16 bit bus with all 1's for now)
+    //
+    // Store result in internal pin as well as `out` pin, in order to check if
+    // it's zero or not
+    Mux16(a=true, b=sumzxreszyres, sel=f, out=out, out=res);
+
+    // Check if output value is zero
+    And16(a=true, b=res, out[0..7]=isresultzerofirsthalf, out[8..15]=isresultzerosecondhalf);
+    Or8Way(in=isresultzerofirsthalf, out=isresultfirsthalfallzero);
+    Or8Way(in=isresultzerosecondhalf, out=isresultsecondhalfallzero);
+    Or(a=isresultfirsthalfallzero, b=isresultsecondhalfallzero, out=isresultzero);
+    Not(in=isresultzero, out=zr);
 }
