@@ -45,23 +45,34 @@ CHIP ALU {
     And16(a=x, b=false, out=zeroedx);
     Mux16(a=x, b=zeroedx, sel=zx, out=zxres);
 
+    // Potentially bitwise-negate `x` input based on `nx` input
+    Not16(in=zxres, out=negatedx);
+    Mux16(a=zxres, b=negatedx, sel=nx, out=nxres);
+
     // Potentially zero `y` input based on `zy` input
     And16(a=y, b=false, out=zeroedy);
     Mux16(a=y, b=zeroedy, sel=zy, out=zyres);
 
-    // Compute the sum of the (potentially zeroed) `x` and `y` inputs, in case
-    // it's needed when we later check the value of the `f` input to see what
-    // computation should be put to the `out` pin
-    Add16(a=zxres, b=zyres, out=sumzxreszyres);
+    // Potentially bitwise-negate `y` input based on `ny` input
+    Not16(in=zyres, out=negatedy);
+    Mux16(a=zyres, b=negatedy, sel=ny, out=nyres);
+
+    // Compute the sum of the (potentially zeroed and/or bitwise-negated) `x`
+    // and `y` inputs, in case it's needed when we later check the value of the
+    // `f` input to see what computation should be put to the `out` pin
+    Add16(a=nxres, b=nyres, out=sumnxresnyres);
 
     // Perform computation based on the value of `f` input (note that we're not
     // yet needing to tackle the case of computing the bitwise AND of the two
     // inputs, so just give the `f` value associated with that option in the
     // `Mux16` the value of a 16 bit bus with all 1's for now)
-    //
+    Mux16(a=true, b=sumnxresnyres, sel=f, out=intermediateres);
+
+    // Potentially bitwise-negate the output/result value
+    Not16(in=intermediateres, out=negatedintermediateres);
     // Store result in internal pin as well as `out` pin, in order to check if
     // it's zero or not
-    Mux16(a=true, b=sumzxreszyres, sel=f, out=out, out=res);
+    Mux16(a=intermediateres, b=negatedintermediateres, sel=no, out=out, out=res);
 
     // Check if output value is zero
     And16(a=true, b=res, out[0..7]=isresultzerofirsthalf, out[8..15]=isresultzerosecondhalf);
