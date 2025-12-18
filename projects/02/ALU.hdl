@@ -70,9 +70,12 @@ CHIP ALU {
 
     // Potentially bitwise-negate the output/result value
     Not16(in=intermediateres, out=negatedintermediateres);
-    // Store result in internal pin as well as `out` pin, in order to check if
+    // Store:
+    // - full result in internal pin as well as `out` pin in order to check if
     // it's zero or not
-    Mux16(a=intermediateres, b=negatedintermediateres, sel=no, out=out, out=res);
+    // - most significant bit of result in internal pin in order to check if
+    // it's negative or not
+    Mux16(a=intermediateres, b=negatedintermediateres, sel=no, out=out, out=res, out[15]=resmsb);
 
     // Check if output value is zero
     And16(a=true, b=res, out[0..7]=isresultzerofirsthalf, out[8..15]=isresultzerosecondhalf);
@@ -80,4 +83,7 @@ CHIP ALU {
     Or8Way(in=isresultzerosecondhalf, out=isresultsecondhalfallzero);
     Or(a=isresultfirsthalfallzero, b=isresultsecondhalfallzero, out=isresultzero);
     Not(in=isresultzero, out=zr);
+
+    // Check if output value is negative
+    Mux(a=false, b=true, sel=resmsb, out=ng);
 }
