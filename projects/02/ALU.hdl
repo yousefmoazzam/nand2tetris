@@ -62,11 +62,15 @@ CHIP ALU {
     // `f` input to see what computation should be put to the `out` pin
     Add16(a=nxres, b=nyres, out=sumnxresnyres);
 
-    // Perform computation based on the value of `f` input (note that we're not
-    // yet needing to tackle the case of computing the bitwise AND of the two
-    // inputs, so just give the `f` value associated with that option in the
-    // `Mux16` the value of a 16 bit bus with all 1's for now)
-    Mux16(a=true, b=sumnxresnyres, sel=f, out=intermediateres);
+
+    // Compute the bitwise AND of the (potentially zeroed and/or
+    // bitwise-negated) `x` and `y` inputs, in case it's needed when we later
+    // check the value of the `f` input to see what computation should be put
+    // to the `out` pin
+    And16(a=nxres, b=nyres, out=andnxresnyres);
+
+    // Perform computation based on the value of `f` input
+    Mux16(a=andnxresnyres, b=sumnxresnyres, sel=f, out=intermediateres);
 
     // Potentially bitwise-negate the output/result value
     Not16(in=intermediateres, out=negatedintermediateres);
