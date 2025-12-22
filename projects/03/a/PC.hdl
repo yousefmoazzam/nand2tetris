@@ -11,12 +11,38 @@
  * else               out(t+1) = out(t)
  *
  * To select a mode, assert the relevant control bit,
- * and de-assert the other two bits. 
+ * and de-assert the other two bits.
  */
 CHIP PC {
     IN in[16],inc, load, reset;
     OUT out[16];
-    
+
     PARTS:
-    //// Replace this comment with your code.
+    // Check if any of the 3 control bits are set, to then determine if the
+    // `load` bit of the internal `Register` chip needs to be set
+    Or8Way(in[0]=inc, in[1]=load, in[2]=reset, in[3..7]=false, out=registerload);
+
+    // Compute the incremented value in case it's needed, depending on if the
+    // `inc` control bit is set
+    Inc16(in=registerout, out=incrementedval);
+
+    // Multiplex between incremented value and current value, based on the
+    // value of the `inc` control bit
+    Mux16(a=registerout, b=incrementedval, sel=inc, out=muxincrementedandcurrent);
+
+    // Multiplex between:
+    // - incremented value or current value
+    // - input
+    // based on the value of the `load` control bit
+    Mux16(a=muxincrementedandcurrent, b=in, sel=load, out=muxincrementedandcurrentandin);
+
+    // Multiplex between:
+    // - incremented value, or current value, or input
+    // - zero
+    // based on the value of the `reset` control bit
+    Mux16(a=muxincrementedandcurrentandin, b=false, sel=reset, out=muxincrementedandcurrentandinandzero);
+
+    // Define the internal `Register` that stores the current value of the
+    // counter
+    Register(in=muxincrementedandcurrentandinandzero, load=registerload, out=out, out=registerout);
 }
